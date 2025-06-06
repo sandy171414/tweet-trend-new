@@ -50,14 +50,14 @@
             <version>3.0.6</version>
         </dependency>
 
-        <!-- ✅ Spring Boot Testing (includes MockMvc, JUnit 5, JUnit 4, AssertJ, etc.) -->
+        <!-- ✅ Spring Boot Testing -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
 
-        <!-- ✅ JUnit 4 (for @RunWith, SpringJUnit4ClassRunner) -->
+        <!-- JUnit 4 -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -65,7 +65,7 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Optional: Explicit JUnit 5 and Mockito support -->
+        <!-- JUnit 5 and Mockito -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
@@ -88,7 +88,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
 
-            <!-- Maven Surefire Plugin for unit tests -->
+            <!-- Maven Surefire Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -119,6 +119,13 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+
+            <!-- ✅ SonarQube Scanner Plugin -->
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>3.10.0.2594</version>
             </plugin>
         </plugins>
     </build>
