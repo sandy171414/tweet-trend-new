@@ -7,8 +7,8 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.5</version> <!-- ✅ Java 21-compatible Spring Boot -->
-        <relativePath/> 
+        <version>3.2.5</version>
+        <relativePath/>
     </parent>
 
     <groupId>com.valaxy</groupId>
@@ -19,30 +19,53 @@
     <packaging>jar</packaging>
 
     <properties>
-        <java.version>21</java.version> <!-- ✅ Target Java 21 -->
+        <java.version>21</java.version>
         <maven.compiler.release>21</maven.compiler.release>
     </properties>
 
     <dependencies>
+        <!-- Spring Boot core -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
         </dependency>
+
+        <!-- Web layer -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+
+        <!-- GitHub API -->
         <dependency>
             <groupId>org.kohsuke</groupId>
             <artifactId>github-api</artifactId>
             <version>1.99</version>
         </dependency>
+
+        <!-- Twitter4J -->
         <dependency>
             <groupId>org.twitter4j</groupId>
             <artifactId>twitter4j-core</artifactId>
             <version>3.0.6</version>
         </dependency>
-        <!-- ✅ JUnit 5 -->
+
+        <!-- ✅ Spring Boot Testing (includes MockMvc, JUnit 5, JUnit 4, AssertJ, etc.) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- ✅ JUnit 4 (for @RunWith, SpringJUnit4ClassRunner) -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.2</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Optional: Explicit JUnit 5 and Mockito support -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
@@ -59,23 +82,28 @@
 
     <build>
         <plugins>
+            <!-- Spring Boot plugin -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+
+            <!-- Maven Surefire Plugin for unit tests -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.2.5</version> <!-- ✅ Fully Java 21 compatible -->
+                <version>3.2.5</version>
                 <configuration>
                     <useSystemClassLoader>false</useSystemClassLoader>
                     <argLine>${argLine} -Xmx2048m</argLine>
                 </configuration>
             </plugin>
+
+            <!-- JaCoCo Plugin for test coverage -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.11</version> <!-- ✅ Supports Java 21 -->
+                <version>0.8.11</version>
                 <executions>
                     <execution>
                         <id>prepare-agent</id>
@@ -101,6 +129,4 @@
             <url>file://jarstaging</url>
         </repository>
     </distributionManagement>
-
 </project>
-
