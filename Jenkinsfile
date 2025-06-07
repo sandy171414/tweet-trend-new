@@ -40,5 +40,20 @@ pipeline {
                 }
             }
         }
+
+        stage('SonarQube Quality Gate') {
+            steps {
+                timeout(time: 2, unit: 'MINUTES') {
+                    script {
+                        def qg = waitForQualityGate()
+                        if (qg.status != 'OK') {
+                            echo "⚠️  Quality Gate failed: ${qg.status}"
+                        } else {
+                            echo "✅ Quality Gate passed."
+                        }
+                    }
+                }
+            }
+        }
     }
 }
