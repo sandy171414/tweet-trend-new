@@ -10,32 +10,30 @@ pipeline {
     }
 
     stages {
-        stage("build") {
+        stage("Build") {
             steps {
-                echo "-------- build started --------"
-                sh 'mvn clean deploy -Dmaven.test.skip=true'
-                echo "-------- build Completed --------"
+                echo "-------- Build Started --------"
+                sh 'mvn clean install -DskipTests=true'
+                echo "-------- Build Completed --------"
             }
         }
 
-        stage("test") {
+        stage("Test & Coverage Report") {
             steps {
-               echo "-------- unit test started --------"
-               sh  'mvn surefire-report:report' 
-               echo "-------- unit test Completed --------"
-            } 
+                echo "-------- Running Unit Tests --------"
+                sh 'mvn test verify'
+                echo "-------- Unit Tests Completed --------"
+            }
         }
 
-        stage('SonarQube analysis') {
+        stage('SonarQube Analysis') {
             environment {
-                scannerHome = tool 'sagar171414-sonar-scanner'
+                scannerHome = tool 'sagar171414-sonar-scanner'  // update if you used a different name in Jenkins Global Tools
             }
             steps {
-                withSonarQubeEnv('sagar171414-sonarqube-server') {
+                withSonarQubeEnv('sagar171414-sonarqube-server') { // update if your SonarQube server has a different name
                     sh """
-                        ${scannerHome}/bin/sonar-scanner \
-                        -Dsonar.scanner.cache.enable=false \
-                        -Dsonar.nodejs.executable=/usr/bin/node
+                        ${scannerHome}/bin/sonar-scanner
                     """
                 }
             }
@@ -47,7 +45,7 @@ pipeline {
                     script {
                         def qg = waitForQualityGate()
                         if (qg.status != 'OK') {
-                            echo "⚠️  Quality Gate failed: ${qg.status}"
+                            error "❌ Quality Gate failed: ${qg.status}"
                         } else {
                             echo "✅ Quality Gate passed."
                         }
