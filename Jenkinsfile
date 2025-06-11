@@ -18,11 +18,11 @@ pipeline {
             }
         }
 
-        stage("Test & Coverage Report") {
+        stage("test") {
             steps {
-                echo "-------- Running Unit Tests --------"
-                sh 'mvn test verify'
-                echo "-------- Unit Tests Completed --------"
+                echo "----------- unit test started ----------"
+                sh 'mvn surefire-report:report'
+                echo "----------- unit test Completed ----------"
             }
         }
 
@@ -32,7 +32,6 @@ pipeline {
             }
             steps {
                 withSonarQubeEnv('sagar171414-sonarqube-server') {
-                    echo "-------- Running Sonar Scanner (properties file mode) --------"
                     sh "${scannerHome}/bin/sonar-scanner"
                 }
             }
@@ -51,15 +50,6 @@ pipeline {
                     }
                 }
             }
-        }
-    }
-
-    post {
-        failure {
-            echo "❌ Pipeline failed. Check the logs for errors."
-        }
-        success {
-            echo "✅ Pipeline completed successfully."
         }
     }
 }
