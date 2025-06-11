@@ -28,13 +28,12 @@ pipeline {
 
         stage('SonarQube Analysis') {
             environment {
-                scannerHome = tool 'sagar171414-sonar-scanner'  // update if you used a different name in Jenkins Global Tools
+                scannerHome = tool 'sagar171414-sonar-scanner'
             }
             steps {
-                withSonarQubeEnv('sagar171414-sonarqube-server') { // update if your SonarQube server has a different name
-                    sh """
-                        ${scannerHome}/bin/sonar-scanner
-                    """
+                withSonarQubeEnv('sagar171414-sonarqube-server') {
+                    echo "-------- Running Sonar Scanner (properties file mode) --------"
+                    sh "${scannerHome}/bin/sonar-scanner"
                 }
             }
         }
@@ -52,6 +51,15 @@ pipeline {
                     }
                 }
             }
+        }
+    }
+
+    post {
+        failure {
+            echo "❌ Pipeline failed. Check the logs for errors."
+        }
+        success {
+            echo "✅ Pipeline completed successfully."
         }
     }
 }
