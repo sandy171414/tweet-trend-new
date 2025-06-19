@@ -9,6 +9,7 @@ pipeline {
         PATH = "/opt/apache-maven-3.9.9/bin:$PATH"
         MAVEN_OPTS = "-Xmx512m -Xms256m -XX:+UseSerialGC"
         registry = "https://emergents.jfrog.io"
+        version = "2.0.2"
     }
 
     stages {
@@ -58,8 +59,6 @@ pipeline {
             steps {
                 script {
                     echo '<--------------- Jar Publish Started --------------->'
-
-                    // ✅ Verify the JAR file exists
                     sh 'echo "--- Verifying JAR before upload ---"'
                     sh 'ls -lh target/*.jar || echo "❌ No JAR found!"'
 
@@ -88,6 +87,28 @@ pipeline {
                     server.publishBuildInfo(buildInfo)
 
                     echo '<--------------- Jar Publish Ended --------------->'
+                }
+            }
+        }
+
+        stage("Docker Build") {
+            steps {
+                script {
+                    echo "<--------------- Docker Build Started --------------->"
+                    app = docker.build("valaxy-docker-docker-local/ttrend:${version}")
+                    echo "<--------------- Docker Build Ended --------------->"
+                }
+            }
+        }
+
+        stage("Docker Publish") {
+            steps {
+                script {
+                    echo "<--------------- Docker Publish Started --------------->"
+                    docker.withRegistry("${registry}", "artifactory_token") {
+                        app.push()
+                    }
+                    echo "<--------------- Docker Publish Ended --------------->"
                 }
             }
         }
