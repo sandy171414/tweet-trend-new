@@ -5,12 +5,10 @@ pipeline {
         }
     }
 
-   environment {
-    PATH = "/opt/apache-maven-3.9.9/bin:$PATH"
-    MAVEN_OPTS = "-Xmx512m -Xms256m -XX:+UseSerialGC"
-    registry = "https://emergents.jfrog.io"
-}
-
+    environment {
+        PATH = "/opt/apache-maven-3.9.9/bin:$PATH"
+        MAVEN_OPTS = "-Xmx512m -Xms256m -XX:+UseSerialGC"
+        registry = "https://emergents.jfrog.io"
     }
 
     stages {
