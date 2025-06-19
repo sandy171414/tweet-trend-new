@@ -59,6 +59,10 @@ pipeline {
                 script {
                     echo '<--------------- Jar Publish Started --------------->'
 
+                    // ✅ Verify the JAR file is present
+                    sh 'echo "--- Verifying JAR before upload ---"'
+                    sh 'ls -lh target/*.jar || echo "❌ No JAR found!"'
+
                     def server = Artifactory.newServer(
                         url: "${env.registry}/artifactory",
                         credentialsId: "artifact-cred"
