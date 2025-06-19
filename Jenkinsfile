@@ -7,6 +7,7 @@ pipeline {
 
     environment {
         PATH = "/opt/apache-maven-3.9.9/bin:$PATH"
+        MAVEN_OPTS = "-Xmx512m -Xms256m -XX:+UseSerialGC"
         registry = "https://emergents.jfrog.io"
     }
 
@@ -19,15 +20,15 @@ pipeline {
             }
         }
 
-        stage("test") {
+        stage("Test") {
             steps {
-                echo "----------- unit test started ----------"
+                echo "----------- Unit Test Started ----------"
                 sh 'mvn surefire-report:report'
-                echo "----------- unit test Completed ----------"
+                echo "----------- Unit Test Completed ----------"
             }
         }
 
-        stage('SonarQube Analysis') {
+        stage("SonarQube Analysis") {
             environment {
                 scannerHome = tool 'sagar171414-sonar-scanner'
             }
@@ -38,7 +39,7 @@ pipeline {
             }
         }
 
-        stage('SonarQube Quality Gate') {
+        stage("SonarQube Quality Gate") {
             steps {
                 timeout(time: 2, unit: 'MINUTES') {
                     script {
@@ -51,6 +52,53 @@ pipeline {
                     }
                 }
             }
+        }
+
+        stage("Jar Publish") {
+            steps {
+                script {
+                    echo '<--------------- Jar Publish Started --------------->'
+
+                    // ✅ Verify the JAR file exists
+                    sh 'echo "--- Verifying JAR before upload ---"'
+                    sh 'ls -lh target/*.jar || echo "❌ No JAR found!"'
+
+                    def server = Artifactory.newServer(
+                        url: "${env.registry}/artifactory",
+                        credentialsId: "artifact-cred"
+                    )
+
+                    def commitId = sh(script: "git rev-parse HEAD", returnStdout: true).trim()
+                    def properties = "buildid=${env.BUILD_ID},commitid=${commitId}"
+
+                    def uploadSpec = """{
+                        "files": [
+                            {
+                                "pattern": "target/*.jar",
+                                "target": "main-libs-release-local/",
+                                "flat": true,
+                                "props": "${properties}",
+                                "exclusions": ["*.sha1", "*.md5"]
+                            }
+                        ]
+                    }"""
+
+                    def buildInfo = server.upload(uploadSpec)
+                    buildInfo.env.collect()
+                    server.publishBuildInfo(buildInfo)
+
+                    echo '<--------------- Jar Publish Ended --------------->'
+                }
+            }
+        }
+    }
+
+    post {
+        failure {
+            echo "❌ Build failed."
+        }
+        success {
+            echo "✅ Build succeeded."
         }
     }
 }
