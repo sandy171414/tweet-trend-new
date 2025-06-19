@@ -59,7 +59,7 @@ pipeline {
                 script {
                     echo '<--------------- Jar Publish Started --------------->'
 
-                    // ✅ Verify the JAR file is present
+                    // ✅ Verify the JAR file exists
                     sh 'echo "--- Verifying JAR before upload ---"'
                     sh 'ls -lh target/*.jar || echo "❌ No JAR found!"'
 
@@ -74,9 +74,9 @@ pipeline {
                     def uploadSpec = """{
                         "files": [
                             {
-                                "pattern": "target/(.*).jar",
-                                "target": "main-libs-release-local/{1}/",
-                                "flat": false,
+                                "pattern": "target/*.jar",
+                                "target": "main-libs-release-local/",
+                                "flat": true,
                                 "props": "${properties}",
                                 "exclusions": ["*.sha1", "*.md5"]
                             }
