@@ -117,7 +117,7 @@ pipeline {
         stage("Cleanup") {
             steps {
                 cleanWs()
-                sh 'sync; echo 3 > /proc/sys/vm/drop_caches || true'
+                sh 'sync; echo 3 > /proc/sys/vm/drop_caches || true'  // Force clear OS memory caches to free RAM
             }
         }
     }
