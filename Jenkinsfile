@@ -7,7 +7,7 @@ pipeline {
 
     environment {
         PATH = "/opt/apache-maven-3.9.9/bin:$PATH"
-        MAVEN_OPTS="-Xmx256m -Xms128m -XX:+UseSerialGC"
+        MAVEN_OPTS="-Xmx256m -Xms128m -XX:+UseSerialGC"  // (Amazon/Spotify/Red Hat Style)
         registry = "https://emergents.jfrog.io"
         version = "2.0.2"
     }
@@ -16,7 +16,7 @@ pipeline {
         stage("Build") {
             steps {
                 echo "-------- Build Started --------"
-                sh 'mvn clean install -DskipTests=true -Dmaven.compiler.fork=false'
+                sh 'mvn clean install -DskipTests=true -Dmaven.compiler.fork=false' // (Spotify/Netflix style)
                 echo "-------- Build Completed --------"
             }
         }
@@ -95,7 +95,8 @@ pipeline {
             steps {
                 script {
                     echo "<--------------- Docker Build Started --------------->"
-                    app = docker.build("valaxy-docker-docker-local/ttrend:${version}")
+                    def tag = "${env.BUILD_NUMBER ?: '0'}-manual" // Safe fallback tag
+                    app = docker.build("valaxy-docker-docker-local/ttrend:${tag}", "--memory=512m .")  // (Google/Spotify style)
                     echo "<--------------- Docker Build Ended --------------->"
                 }
             }
@@ -110,6 +111,13 @@ pipeline {
                     }
                     echo "<--------------- Docker Publish Ended --------------->"
                 }
+            }
+        }
+
+        stage("Cleanup") {
+            steps {
+                cleanWs()
+                sh 'sync; echo 3 > /proc/sys/vm/drop_caches || true'
             }
         }
     }
