@@ -16,7 +16,7 @@ pipeline {
         stage("Build") {
             steps {
                 echo "-------- Build Started --------"
-                sh 'mvn clean install -DskipTests=true'
+                sh 'mvn clean install -DskipTests=true -Dmaven.compiler.fork=false'
                 echo "-------- Build Completed --------"
             }
         }
