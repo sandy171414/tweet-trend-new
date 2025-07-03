@@ -8,7 +8,7 @@ pipeline {
     environment {
         PATH = "/opt/apache-maven-3.9.9/bin:$PATH"
         MAVEN_OPTS="-Xmx256m -Xms128m -XX:+UseSerialGC"
-        registry = "https://emergents.jfrog.io"
+        registry = "https://trialvl2jw6.jfrog.io"
         version = "2.0.2"
     }
 
@@ -74,7 +74,7 @@ pipeline {
                         "files": [
                             {
                                 "pattern": "target/*.jar",
-                                "target": "main-libs-release-local/",
+                                "target": "devops-libs-release-local/",
                                 "flat": true,
                                 "props": "${properties}",
                                 "exclusions": ["*.sha1", "*.md5"]
