@@ -7,7 +7,7 @@ pipeline {
 
     environment {
         PATH = "/opt/apache-maven-3.9.9/bin:$PATH"
-        MAVEN_OPTS="-Xmx256m -Xms128m -XX:+UseSerialGC"  // (Amazon/Spotify/Red Hat Style)
+        MAVEN_OPTS="-Xmx256m -Xms128m -XX:+UseSerialGC"
         registry = "https://emergents.jfrog.io"
         version = "2.0.2"
     }
@@ -16,7 +16,7 @@ pipeline {
         stage("Build") {
             steps {
                 echo "-------- Build Started --------"
-                sh 'mvn clean install -DskipTests=true -Dmaven.compiler.fork=false' // (Spotify/Netflix style)
+                sh 'mvn clean install -DskipTests=true -Dmaven.compiler.fork=false'
                 echo "-------- Build Completed --------"
             }
         }
@@ -95,9 +95,30 @@ pipeline {
             steps {
                 script {
                     echo "<--------------- Docker Build Started --------------->"
-                    def tag = "${env.BUILD_NUMBER ?: '0'}-manual" // Safe fallback tag
-                    app = docker.build("valaxy-docker-docker-local/ttrend:${tag}", "--memory=512m .")  // (Google/Spotify style)
+                    def tag = "${env.BUILD_NUMBER ?: '0'}-manual"
+                    app = docker.build("valaxy-docker-docker-local/ttrend:${tag}", "--memory=512m .")
+                    env.DOCKER_IMAGE_TAG = tag  // Store tag for next stages
                     echo "<--------------- Docker Build Ended --------------->"
+                }
+            }
+        }
+
+        stage("Docker Image Scan") {
+            steps {
+                script {
+                    def image = "valaxy-docker-docker-local/ttrend:${env.DOCKER_IMAGE_TAG}"
+                    echo "<--------------- Docker Scan Started [Trivy] --------------->"
+                    
+                    sh """
+                        trivy image \
+                          --severity HIGH,CRITICAL \
+                          --exit-code 1 \
+                          --no-progress \
+                          --ignore-unfixed \
+                          ${image}
+                    """
+
+                    echo "<--------------- Docker Scan Completed --------------->"
                 }
             }
         }
@@ -117,7 +138,7 @@ pipeline {
         stage("Cleanup") {
             steps {
                 cleanWs()
-                sh 'sync; echo 3 > /proc/sys/vm/drop_caches || true'  // Force clear OS memory caches to free RAM
+                sh 'sync; echo 3 > /proc/sys/vm/drop_caches || true'
             }
         }
     }
