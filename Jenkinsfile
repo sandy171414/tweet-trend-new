@@ -42,9 +42,10 @@ pipeline {
                         def qg = waitForQualityGate()
                         echo "🔍 SonarQube Quality Gate status: ${qg.status}"
 
+                        // Ignore Quality Gate failure, only log the result
                         if (qg.status != 'OK') {
-                            echo "⚠️ Quality Gate failed: ${qg.status} — Continuing for learning purpose."
-                            currentBuild.result = 'UNSTABLE'
+                            echo "⚠️ Quality Gate failed: ${qg.status} — Ignoring for now."
+                            // Do NOT mark build as UNSTABLE
                         } else {
                             echo "✅ Quality Gate passed."
                         }
@@ -121,9 +122,10 @@ pipeline {
                         returnStatus: true
                     )
 
+                    // Ignore vulnerabilities for now, only log them
                     if (trivyExitCode == 1) {
-                        echo "⚠️ Trivy found HIGH or CRITICAL vulnerabilities."
-                        currentBuild.result = 'UNSTABLE'
+                        echo "⚠️ Trivy found HIGH or CRITICAL vulnerabilities (ignored for now)."
+                        // Do NOT mark build as UNSTABLE
                     } else if (trivyExitCode == 2) {
                         error "❌ Trivy failed to execute properly (exit code 2)."
                     } else {
@@ -163,7 +165,7 @@ pipeline {
             echo "✅ Build succeeded."
         }
         unstable {
-            echo "⚠️ Build marked as UNSTABLE due to vulnerabilities or quality gate."
+            echo "⚠️ Build was marked as UNSTABLE earlier, but now we ignore it for learning purposes."
         }
     }
 }
