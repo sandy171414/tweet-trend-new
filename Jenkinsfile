@@ -81,8 +81,11 @@ pipeline {
                 script {
                     echo "<--------------- Docker Build Started --------------->"
                     def tag = "${env.BUILD_NUMBER ?: '0'}-manual"
-                    app = docker.build("valaxy-docker-docker-local/ttrend:${tag}", "--memory=512m .")
+                    def imageFullPath = "trialvl2jw6.jfrog.io/devops-docker-local/ttrend:${tag}"
+
+                    app = docker.build("${imageFullPath}", "--memory=512m .")
                     env.DOCKER_IMAGE_TAG = tag
+                    env.DOCKER_IMAGE_NAME = imageFullPath
                     echo "<--------------- Docker Build Ended --------------->"
                 }
             }
@@ -91,7 +94,7 @@ pipeline {
         stage("Docker Image Scan") {
             steps {
                 script {
-                    def image = "valaxy-docker-docker-local/ttrend:${env.DOCKER_IMAGE_TAG}"
+                    def image = env.DOCKER_IMAGE_NAME
                     echo "<--------------- Docker Scan Started [Trivy] --------------->"
 
                     def trivyExitCode = sh(
@@ -108,7 +111,7 @@ pipeline {
 
                     if (trivyExitCode == 1) {
                         echo "⚠️ Trivy found HIGH or CRITICAL vulnerabilities."
-                        currentBuild.result = 'UNSTABLE'  // Optional: flag build but don't fail
+                        currentBuild.result = 'UNSTABLE'
                     } else if (trivyExitCode == 2) {
                         error "❌ Trivy failed to execute properly (exit code 2)."
                     } else {
