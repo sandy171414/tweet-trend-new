@@ -13,19 +13,12 @@ pipeline {
     }
 
     stages {
-        stage("Build") {
+        stage("Build & Unit Test with Coverage") {
             steps {
-                echo "-------- Build Started --------"
-                sh 'mvn clean install -DskipTests=true -Dmaven.compiler.fork=false'
-                echo "-------- Build Completed --------"
-            }
-        }
-
-        stage("Test") {
-            steps {
-                echo "----------- Unit Test Started ----------"
-                sh 'mvn surefire-report:report'
-                echo "----------- Unit Test Completed ----------"
+                echo "-------- Build & Test Started --------"
+                // Run tests and generate JaCoCo coverage report
+                sh 'mvn clean verify -Dmaven.compiler.fork=false'
+                echo "-------- Build & Test Completed --------"
             }
         }
 
