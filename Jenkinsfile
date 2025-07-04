@@ -32,17 +32,18 @@ pipeline {
             }
         }
 
-        stage("SonarQube Quality Gate (Non-Blocking)") {
+        stage("SonarQube Quality Gate") {
             steps {
                 timeout(time: 5, unit: 'MINUTES') {
                     script {
                         echo "⏳ Waiting for SonarQube Quality Gate result..."
-                        sleep(time: 10, unit: 'SECONDS')
-                        def qg = waitForQualityGate()
+                        sleep(time: 10, unit: 'SECONDS') // buffer delay
 
+                        def qg = waitForQualityGate()
                         echo "🔍 SonarQube Quality Gate status: ${qg.status}"
+
                         if (qg.status != 'OK') {
-                            echo "⚠️ SonarQube Quality Gate failed: ${qg.status} — proceeding anyway for learning purpose"
+                            echo "⚠️ Quality Gate failed: ${qg.status} — Continuing for learning purpose."
                             currentBuild.result = 'UNSTABLE'
                         } else {
                             echo "✅ Quality Gate passed."
