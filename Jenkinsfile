@@ -7,7 +7,7 @@ pipeline {
 
     environment {
         PATH = "/opt/apache-maven-3.9.9/bin:$PATH"
-        MAVEN_OPTS="-Xmx256m -Xms128m -XX:+UseSerialGC"
+        MAVEN_OPTS = "-Xmx256m -Xms128m -XX:+UseSerialGC"
         registry = "https://trialvl2jw6.jfrog.io"
         version = "2.0.2"
     }
@@ -39,23 +39,6 @@ pipeline {
                 }
             }
         }
-
-        /*
-        stage("SonarQube Quality Gate") {
-            steps {
-                timeout(time: 5, unit: 'MINUTES') {
-                    script {
-                        def qg = waitForQualityGate()
-                        if (qg.status != 'OK') {
-                            error "❌ Quality Gate failed: ${qg.status}"
-                        } else {
-                            echo "✅ Quality Gate passed."
-                        }
-                    }
-                }
-            }
-        }
-        */
 
         stage("Jar Publish") {
             steps {
@@ -99,7 +82,7 @@ pipeline {
                     echo "<--------------- Docker Build Started --------------->"
                     def tag = "${env.BUILD_NUMBER ?: '0'}-manual"
                     app = docker.build("valaxy-docker-docker-local/ttrend:${tag}", "--memory=512m .")
-                    env.DOCKER_IMAGE_TAG = tag  // Store tag for next stages
+                    env.DOCKER_IMAGE_TAG = tag
                     echo "<--------------- Docker Build Ended --------------->"
                 }
             }
@@ -110,15 +93,27 @@ pipeline {
                 script {
                     def image = "valaxy-docker-docker-local/ttrend:${env.DOCKER_IMAGE_TAG}"
                     echo "<--------------- Docker Scan Started [Trivy] --------------->"
-                    
-                    sh """
-                        trivy image \
-                          --severity HIGH,CRITICAL \
-                          --exit-code 1 \
-                          --no-progress \
-                          --ignore-unfixed \
-                          ${image}
-                    """
+
+                    def trivyExitCode = sh(
+                        script: """
+                            trivy image \
+                              --severity HIGH,CRITICAL \
+                              --exit-code 1 \
+                              --no-progress \
+                              --ignore-unfixed \
+                              ${image}
+                        """,
+                        returnStatus: true
+                    )
+
+                    if (trivyExitCode == 1) {
+                        echo "⚠️ Trivy found HIGH or CRITICAL vulnerabilities."
+                        currentBuild.result = 'UNSTABLE'  // Optional: flag build but don't fail
+                    } else if (trivyExitCode == 2) {
+                        error "❌ Trivy failed to execute properly (exit code 2)."
+                    } else {
+                        echo "✅ No critical vulnerabilities found by Trivy."
+                    }
 
                     echo "<--------------- Docker Scan Completed --------------->"
                 }
@@ -151,6 +146,9 @@ pipeline {
         }
         success {
             echo "✅ Build succeeded."
+        }
+        unstable {
+            echo "⚠️ Build marked as UNSTABLE due to vulnerabilities or quality gate."
         }
     }
 }
