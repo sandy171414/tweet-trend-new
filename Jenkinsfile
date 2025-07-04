@@ -16,7 +16,6 @@ pipeline {
         stage("Build & Unit Test with Coverage") {
             steps {
                 echo "-------- Build & Test Started --------"
-                // Run tests and generate JaCoCo coverage report
                 sh 'mvn clean verify -Dmaven.compiler.fork=false'
                 echo "-------- Build & Test Completed --------"
             }
@@ -35,9 +34,14 @@ pipeline {
 
         stage("SonarQube Quality Gate") {
             steps {
-                timeout(time: 2, unit: 'MINUTES') {
+                timeout(time: 5, unit: 'MINUTES') {
                     script {
+                        echo "⏳ Waiting for SonarQube Quality Gate result..."
+                        sleep(time: 10, unit: 'SECONDS') // small buffer delay
+
                         def qg = waitForQualityGate()
+                        echo "🔍 SonarQube Quality Gate status: ${qg.status}"
+
                         if (qg.status != 'OK') {
                             error "❌ Quality Gate failed: ${qg.status}"
                         } else {
