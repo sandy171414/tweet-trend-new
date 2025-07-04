@@ -40,6 +40,21 @@ pipeline {
             }
         }
 
+        stage("SonarQube Quality Gate") {
+            steps {
+                timeout(time: 2, unit: 'MINUTES') {
+                    script {
+                        def qg = waitForQualityGate()
+                        if (qg.status != 'OK') {
+                            error "❌ Quality Gate failed: ${qg.status}"
+                        } else {
+                            echo "✅ Quality Gate passed."
+                        }
+                    }
+                }
+            }
+        }
+
         stage("Jar Publish") {
             steps {
                 script {
@@ -91,7 +106,7 @@ pipeline {
             }
         }
 
-        stage("Docker Image Scan") {
+        stage("Docker Image Scan by Trivy") {
             steps {
                 script {
                     def image = env.DOCKER_IMAGE_NAME
