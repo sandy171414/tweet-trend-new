@@ -29,6 +29,8 @@ pipeline {
                 withSonarQubeEnv('sagar171414-sonarqube-server') {
                     sh "${scannerHome}/bin/sonar-scanner"
                 }
+                // Optional: Print CE Task ID for debugging
+                sh "cat .scannerwork/report-task.txt || echo '⚠️ No report-task.txt found'"
             }
         }
 
@@ -37,16 +39,16 @@ pipeline {
                 timeout(time: 5, unit: 'MINUTES') {
                     script {
                         echo "⏳ Waiting for SonarQube Quality Gate result..."
-                        sleep(time: 10, unit: 'SECONDS') // small buffer delay
+                        sleep(time: 10, unit: 'SECONDS')
 
                         def qg = waitForQualityGate()
                         echo "🔍 SonarQube Quality Gate status: ${qg.status}"
 
                         if (qg.status != 'OK') {
-                            error "❌ Quality Gate failed: ${qg.status}"
-                        } else {
-                            echo "✅ Quality Gate passed."
+                            error "❌ SonarQube Quality Gate failed: ${qg.status}"
                         }
+
+                        echo "✅ SonarQube Quality Gate passed successfully."
                     }
                 }
             }
