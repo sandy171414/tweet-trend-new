@@ -18,6 +18,8 @@ pipeline {
                 echo "-------- Build & Test Started --------"
                 sh 'mvn clean verify -Dmaven.compiler.fork=false'
                 echo "-------- Build & Test Completed --------"
+                slackSend(channel: 'jenkins-alerts', color: 'good',
+                    message: "✅ Maven Build & Unit Test completed for *${env.JOB_NAME}* #${env.BUILD_NUMBER}")
             }
         }
 
@@ -28,6 +30,8 @@ pipeline {
             steps {
                 withSonarQubeEnv('sagar171414-sonarqube-server') {
                     sh "${scannerHome}/bin/sonar-scanner"
+                    slackSend(channel: 'jenkins-alerts', color: '#439FE0',
+                        message: "🔍 SonarQube scan submitted for *${env.JOB_NAME}* #${env.BUILD_NUMBER}")
                 }
             }
         }
@@ -37,17 +41,19 @@ pipeline {
                 timeout(time: 5, unit: 'MINUTES') {
                     script {
                         echo "⏳ Waiting for SonarQube Quality Gate result..."
-                        sleep(time: 10, unit: 'SECONDS') // buffer delay
+                        sleep(time: 10, unit: 'SECONDS')
 
                         def qg = waitForQualityGate()
                         echo "🔍 SonarQube Quality Gate status: ${qg.status}"
 
-                        // Ignore Quality Gate failure, only log the result
                         if (qg.status != 'OK') {
                             echo "⚠️ Quality Gate failed: ${qg.status} — Ignoring for now."
-                            // Do NOT mark build as UNSTABLE
+                            slackSend(channel: 'jenkins-alerts', color: 'warning',
+                                message: "⚠️ SonarQube Quality Gate *failed* for *${env.JOB_NAME}* #${env.BUILD_NUMBER}: ${qg.status}")
                         } else {
                             echo "✅ Quality Gate passed."
+                            slackSend(channel: 'jenkins-alerts', color: 'good',
+                                message: "✅ SonarQube Quality Gate *passed* for *${env.JOB_NAME}* #${env.BUILD_NUMBER}")
                         }
                     }
                 }
@@ -85,6 +91,8 @@ pipeline {
                     server.publishBuildInfo(buildInfo)
 
                     echo '<--------------- Jar Publish Ended --------------->'
+                    slackSend(channel: 'jenkins-alerts', color: '#36a64f',
+                        message: "📦 JAR uploaded to Artifactory for *${env.JOB_NAME}* #${env.BUILD_NUMBER}")
                 }
             }
         }
@@ -100,6 +108,8 @@ pipeline {
                     env.DOCKER_IMAGE_TAG = tag
                     env.DOCKER_IMAGE_NAME = imageFullPath
                     echo "<--------------- Docker Build Ended --------------->"
+                    slackSend(channel: 'jenkins-alerts', color: '#36a64f',
+                        message: "🐳 Docker image *${env.DOCKER_IMAGE_NAME}* built for *${env.JOB_NAME}*")
                 }
             }
         }
@@ -122,14 +132,16 @@ pipeline {
                         returnStatus: true
                     )
 
-                    // Ignore vulnerabilities for now, only log them
                     if (trivyExitCode == 1) {
                         echo "⚠️ Trivy found HIGH or CRITICAL vulnerabilities (ignored for now)."
-                        // Do NOT mark build as UNSTABLE
+                        slackSend(channel: 'jenkins-alerts', color: 'warning',
+                            message: "⚠️ Trivy found HIGH/CRITICAL vulnerabilities in *${env.DOCKER_IMAGE_NAME}*")
                     } else if (trivyExitCode == 2) {
                         error "❌ Trivy failed to execute properly (exit code 2)."
                     } else {
                         echo "✅ No critical vulnerabilities found by Trivy."
+                        slackSend(channel: 'jenkins-alerts', color: 'good',
+                            message: "✅ Trivy scan clean for *${env.DOCKER_IMAGE_NAME}*")
                     }
 
                     echo "<--------------- Docker Scan Completed --------------->"
@@ -145,6 +157,8 @@ pipeline {
                         app.push()
                     }
                     echo "<--------------- Docker Publish Ended --------------->"
+                    slackSend(channel: 'jenkins-alerts', color: '#439FE0',
+                        message: "🚀 Docker image *${env.DOCKER_IMAGE_NAME}* pushed to Artifactory")
                 }
             }
         }
@@ -153,19 +167,24 @@ pipeline {
             steps {
                 cleanWs()
                 sh 'sync; echo 3 > /proc/sys/vm/drop_caches || true'
+                slackSend(channel: 'jenkins-alerts', color: '#cccccc',
+                    message: "🧹 Workspace cleaned after build *${env.JOB_NAME}* #${env.BUILD_NUMBER}")
             }
         }
     }
 
     post {
-        failure {
-            echo "❌ Build failed."
-        }
         success {
-            echo "✅ Build succeeded."
+            slackSend(channel: 'jenkins-alerts', color: 'good',
+                message: "✅ *${env.JOB_NAME}* #${env.BUILD_NUMBER} succeeded!\n🔗 ${env.BUILD_URL}")
+        }
+        failure {
+            slackSend(channel: 'jenkins-alerts', color: 'danger',
+                message: "❌ *${env.JOB_NAME}* #${env.BUILD_NUMBER} failed!\n🔗 ${env.BUILD_URL}")
         }
         unstable {
-            echo "⚠️ Build was marked as UNSTABLE earlier, but now we ignore it for learning purposes."
+            slackSend(channel: 'jenkins-alerts', color: 'warning',
+                message: "⚠️ *${env.JOB_NAME}* #${env.BUILD_NUMBER} is UNSTABLE (vulnerabilities or quality gate).\n🔗 ${env.BUILD_URL}")
         }
     }
 }
