@@ -177,14 +177,25 @@ pipeline {
         success {
             slackSend(channel: 'jenkins-alerts', color: 'good',
                 message: "✅ *${env.JOB_NAME}* #${env.BUILD_NUMBER} succeeded!\n🔗 ${env.BUILD_URL}")
+            mail to: 'sagarsaswade31@gmail.com',
+                subject: "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: "Build succeeded!\n\n🔗 ${env.BUILD_URL}"
         }
+
         failure {
             slackSend(channel: 'jenkins-alerts', color: 'danger',
                 message: "❌ *${env.JOB_NAME}* #${env.BUILD_NUMBER} failed!\n🔗 ${env.BUILD_URL}")
+            mail to: 'sagarsaswade31@gmail.com',
+                subject: "❌ FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: "Build failed.\n\n🔗 ${env.BUILD_URL}"
         }
+
         unstable {
             slackSend(channel: 'jenkins-alerts', color: 'warning',
                 message: "⚠️ *${env.JOB_NAME}* #${env.BUILD_NUMBER} is UNSTABLE (vulnerabilities or quality gate).\n🔗 ${env.BUILD_URL}")
+            mail to: 'sagarsaswade31@gmail.com',
+                subject: "⚠️ UNSTABLE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: "Build marked as UNSTABLE.\nLikely reasons: vulnerabilities or SonarQube quality gate failure.\n\n🔗 ${env.BUILD_URL}"
         }
     }
 }
