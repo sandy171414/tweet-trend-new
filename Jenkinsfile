@@ -1,4 +1,4 @@
-def dockerImage // Declare globally for reuse
+def dockerImage
 
 pipeline {
     agent {
@@ -82,7 +82,7 @@ pipeline {
                     dockerImage = docker.build(imageFullPath, "--memory=512m .")
                     env.DOCKER_IMAGE_NAME = imageFullPath
 
-                    echo -e "\033[1;32m🟢 Docker build complete: ${imageFullPath}\033[0m"
+                    echo "🟢 Docker build complete: ${imageFullPath}"
                 }
             }
         }
