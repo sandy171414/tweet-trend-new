@@ -7,29 +7,34 @@ import java.util.Map;
 import org.kohsuke.github.GHRepositorySearchBuilder;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.github.GitHubBuilder;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import twitter4j.Trend;
-import twitter4j.Trends;
-import twitter4j.Twitter;
-import twitter4j.TwitterException;
-import twitter4j.TwitterFactory;
-import twitter4j.conf.ConfigurationBuilder;
-
 @RestController
 public class RepositoryDetailsController {
 
+    @RequestMapping("/")
+    public String getRepos() throws IOException {
+        GitHub github = new GitHubBuilder().withPassword("valaxytech@gmail.com", "XXXXXXXX").build();
+        GHRepositorySearchBuilder builder = github.searchRepositories();
+        return "wellcome DEV";
+    }
 
+    @GetMapping("/trends")
+    public Map<String, String> getTwitterTrends(@RequestParam("placeid") String trendPlace, @RequestParam("count") String trendCount) {
+        System.out.println("Mocking Twitter trends for testing...");
 
+        Map<String, String> trendDetails = new HashMap<>();
 
-    @Autowired
-    private Environment env;
+        // Example mock data
+        int count = Integer.parseInt(trendCount);
+        for (int i = 1; i <= count; i++) {
+            trendDetails.put("MockTrend" + i, "https://twitter.com/MockTrend" + i);
+        }
 
+<<<<<<< HEAD
 	@RequestMapping("/")
 	public String getRepos() throws IOException {
 		GitHub github = new GitHubBuilder().withPassword("valaxytech@gmail.com", "XXXXXXXX").build();
@@ -77,5 +82,9 @@ public class RepositoryDetailsController {
 		}
 		return trendDetails;
 	}
+=======
+        return trendDetails;
+    }
+>>>>>>> main
 
 }
