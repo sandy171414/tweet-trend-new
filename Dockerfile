@@ -17,5 +17,5 @@ ENV SPRING_PROFILES_ACTIVE=main
 
 EXPOSE 8080
 
-# ✅ Correct shell-form ENTRYPOINT — no nesting
-ENTRYPOINT sh -c 'java $JAVA_OPTS -Dspring.profiles.active=$SPRING_PROFILES_ACTIVE -jar app.jar'
+# ✅ Correct shell-form ENTRYPOINT using double quotes
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Dspring.profiles.active=$SPRING_PROFILES_ACTIVE -jar app.jar"]
