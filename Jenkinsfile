@@ -108,7 +108,7 @@ pipeline {
                     env.DOCKER_IMAGE_TAG = tag
                     env.DOCKER_IMAGE_NAME = imageFullPath
                     echo "<--------------- Docker Build Ended --------------->"
-                    slackSend(channel: 'jenkins-alerts', color: '#38a64f',
+                    slackSend(channel: 'jenkins-alerts', color: '#36a64f',
                         message: "🐳 Docker image *${env.DOCKER_IMAGE_NAME}* built for *${env.JOB_NAME}*")
                 }
             }
@@ -163,26 +163,39 @@ pipeline {
             }
         }
 
-        stage("Docker Run on Host") {
+        stage("Run Docker Container per Branch") {
             steps {
                 script {
-                    echo "<--------------- Docker Run Started --------------->"
-                    def containerName = "ttrend-container-${env.BUILD_NUMBER}"
+                    def port = ''
+                    def containerName = ''
+
+                    switch (env.BRANCH_NAME) {
+                        case 'main':
+                            port = '8001'
+                            containerName = 'ttrend-main'
+                            break
+                        case 'dev':
+                            port = '8002'
+                            containerName = 'ttrend-dev'
+                            break
+                        case 'stage':
+                            port = '8003'
+                            containerName = 'ttrend-stage'
+                            break
+                        default:
+                            error("No port defined for branch: ${env.BRANCH_NAME}")
+                    }
 
                     sh """
+                        echo "🧹 Cleaning up old container (if exists)..."
                         docker rm -f ${containerName} || true
-                        docker run -d --name ${containerName} -p 8000:8000 ${env.DOCKER_IMAGE_NAME}
-                        sleep 10
-                        docker ps | grep ${containerName}
+
+                        echo "🚀 Running container ${containerName} on port ${port}..."
+                        docker run -d --name ${containerName} -p ${port}:8080 ${env.DOCKER_IMAGE_NAME}
                     """
 
-                    def publicIP = sh(script: "curl -s http://checkip.amazonaws.com", returnStdout: true).trim()
-                    def accessUrl = "http://${publicIP}:8000"
-
-                    echo "🌐 App is running at: ${accessUrl}"
-                    slackSend(channel: 'jenkins-alerts', color: '#439FE0',
-                        message: "🌐 App container is running on: ${accessUrl}")
-                    env.RUNNING_APP_URL = accessUrl
+                    slackSend(channel: 'jenkins-alerts', color: '#00bfff',
+                        message: "🌐 Branch *${env.BRANCH_NAME}* app deployed → http://<your-public-ip>:${port}")
                 }
             }
         }
