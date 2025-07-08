@@ -39,7 +39,7 @@ public class RepositoryDetailsController {
 	public String getRepos() throws IOException {
 		GitHub github = new GitHubBuilder().withPassword("valaxytech@gmail.com", "XXXXXXXX").build();
 		GHRepositorySearchBuilder builder = github.searchRepositories();
-		return "Optimus Prime Wellcome to the Jungle";
+		return "this is dev branch boom";
 	}
 
 	@GetMapping("/trends")
