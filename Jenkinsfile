@@ -163,6 +163,30 @@ pipeline {
             }
         }
 
+        stage("Docker Run on Host") {
+            steps {
+                script {
+                    echo "<--------------- Docker Run Started --------------->"
+                    def containerName = "ttrend-container-${env.BUILD_NUMBER}"
+
+                    sh """
+                        docker rm -f ${containerName} || true
+                        docker run -d --name ${containerName} -p 8000:8000 ${env.DOCKER_IMAGE_NAME}
+                        sleep 10
+                        docker ps | grep ${containerName}
+                    """
+
+                    def publicIP = sh(script: "curl -s http://checkip.amazonaws.com", returnStdout: true).trim()
+                    def accessUrl = "http://${publicIP}:8000"
+
+                    echo "🌐 App is running at: ${accessUrl}"
+                    slackSend(channel: 'jenkins-alerts', color: '#439FE0',
+                        message: "🌐 App container is running on: ${accessUrl}")
+                    env.RUNNING_APP_URL = accessUrl
+                }
+            }
+        }
+
         stage("Cleanup") {
             steps {
                 cleanWs()
