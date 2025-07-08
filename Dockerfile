@@ -1,14 +1,21 @@
-# Use lightweight OpenJDK base image
-FROM openjdk:17-jdk-slim
+# Stage 1: Build the application
+FROM maven:3.9.6-eclipse-temurin-21 AS builder
 
-# Set working directory inside container
 WORKDIR /app
+COPY . .
 
-# Copy JAR from build context to image
-COPY target/demo-workshop-2.1.2.jar ttrend.jar
+RUN mvn clean package -DskipTests
 
-# Expose the app port (if applicable)
+# Stage 2: Run the application
+FROM eclipse-temurin:21-jre
+
+WORKDIR /app
+COPY --from=builder /app/target/*.jar app.jar
+
+# Optional: allow dynamic profile + JVM opts
+ENV JAVA_OPTS=""
+ENV SPRING_PROFILES_ACTIVE=main
+
 EXPOSE 8080
 
-# Run the Spring Boot app
-ENTRYPOINT ["java", "-jar", "ttrend.jar"]
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Dspring.profiles.active=$SPRING_PROFILES_ACTIVE -jar app.jar"]
