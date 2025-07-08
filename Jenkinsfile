@@ -166,36 +166,28 @@ pipeline {
         stage("Run Docker Container per Branch") {
             steps {
                 script {
-                    def port = ''
-                    def containerName = ''
-
-                    switch (env.BRANCH_NAME) {
-                        case 'main':
-                            port = '8001'
-                            containerName = 'ttrend-main'
-                            break
-                        case 'dev':
-                            port = '8002'
-                            containerName = 'ttrend-dev'
-                            break
-                        case 'stage':
-                            port = '8003'
-                            containerName = 'ttrend-stage'
-                            break
-                        default:
-                            error("No port defined for branch: ${env.BRANCH_NAME}")
-                    }
+                    def portMap = [
+                        'main': '8001',
+                        'dev' : '8002',
+                        'stage': '8003'
+                    ]
+                    def port = portMap.get(env.BRANCH_NAME, '8000')
+                    def containerName = "ttrend-${env.BRANCH_NAME}"
 
                     sh """
                         echo "🧹 Cleaning up old container (if exists)..."
                         docker rm -f ${containerName} || true
 
                         echo "🚀 Running container ${containerName} on port ${port}..."
-                        docker run -d --name ${containerName} -p ${port}:8080 ${env.DOCKER_IMAGE_NAME}
+                        docker run -d \
+                            -p ${port}:8080 \
+                            -e SPRING_PROFILES_ACTIVE=${env.BRANCH_NAME} \
+                            --name ${containerName} \
+                            ${env.DOCKER_IMAGE_NAME}
                     """
 
                     slackSend(channel: 'jenkins-alerts', color: '#00bfff',
-                        message: "🌐 Branch *${env.BRANCH_NAME}* app deployed → http://<your-public-ip>:${port}")
+                        message: "🌐 Branch *${env.BRANCH_NAME}* deployed → http://<your-public-ip>:${port}")
                 }
             }
         }
@@ -236,3 +228,4 @@ pipeline {
         }
     }
 }
+
