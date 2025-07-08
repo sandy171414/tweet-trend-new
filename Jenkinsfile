@@ -163,6 +163,43 @@ pipeline {
             }
         }
 
+        stage("Run Docker Container per Branch") {
+            steps {
+                script {
+                    def port = ''
+                    def containerName = ''
+
+                    switch (env.BRANCH_NAME) {
+                        case 'main':
+                            port = '8001'
+                            containerName = 'ttrend-main'
+                            break
+                        case 'dev':
+                            port = '8002'
+                            containerName = 'ttrend-dev'
+                            break
+                        case 'stage':
+                            port = '8003'
+                            containerName = 'ttrend-stage'
+                            break
+                        default:
+                            error("No port defined for branch: ${env.BRANCH_NAME}")
+                    }
+
+                    sh """
+                        echo "🧹 Cleaning up old container (if exists)..."
+                        docker rm -f ${containerName} || true
+
+                        echo "🚀 Running container ${containerName} on port ${port}..."
+                        docker run -d --name ${containerName} -p ${port}:8080 ${env.DOCKER_IMAGE_NAME}
+                    """
+
+                    slackSend(channel: 'jenkins-alerts', color: '#00bfff',
+                        message: "🌐 Branch *${env.BRANCH_NAME}* app deployed → http://<your-public-ip>:${port}")
+                }
+            }
+        }
+
         stage("Cleanup") {
             steps {
                 cleanWs()
