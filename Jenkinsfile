@@ -5,6 +5,11 @@ pipeline {
         }
     }
 
+    options {
+        timestamps()
+        ansiColor('xterm')
+    }
+
     environment {
         PATH = "/opt/apache-maven-3.9.9/bin:$PATH"
         MAVEN_OPTS = "-Xmx256m -Xms128m -XX:+UseSerialGC"
@@ -16,7 +21,11 @@ pipeline {
         stage("Build & Unit Test with Coverage") {
             steps {
                 echo "-------- Build & Test Started --------"
-                sh 'mvn clean verify -Dmaven.compiler.fork=false'
+                sh '''
+                    echo -e "\\033[1;34m🔵 Running mvn clean verify...\\033[0m"
+                    mvn clean verify -Dmaven.compiler.fork=false
+                    echo -e "\\033[1;32m🟢 Build & Unit Tests passed!\\033[0m"
+                '''
                 echo "-------- Build & Test Completed --------"
                 slackSend(channel: 'jenkins-alerts', color: 'good',
                     message: "✅ Maven Build & Unit Test completed for *${env.JOB_NAME}* #${env.BUILD_NUMBER}")
@@ -29,7 +38,11 @@ pipeline {
             }
             steps {
                 withSonarQubeEnv('sagar171414-sonarqube-server') {
-                    sh "${scannerHome}/bin/sonar-scanner"
+                    sh '''
+                        echo -e "\\033[1;34m🔍 Starting SonarQube scan...\\033[0m"
+                        ${scannerHome}/bin/sonar-scanner
+                        echo -e "\\033[1;32m🟢 SonarQube scan submitted!\\033[0m"
+                    '''
                     slackSend(channel: 'jenkins-alerts', color: '#439FE0',
                         message: "🔍 SonarQube scan submitted for *${env.JOB_NAME}* #${env.BUILD_NUMBER}")
                 }
@@ -47,7 +60,7 @@ pipeline {
                         echo "🔍 SonarQube Quality Gate status: ${qg.status}"
 
                         if (qg.status != 'OK') {
-                            echo "⚠️ Quality Gate failed: ${qg.status} — Ignoring for now."
+                            echo "⚠️ Quality Gate failed: ${qg.status}"
                             slackSend(channel: 'jenkins-alerts', color: 'warning',
                                 message: "⚠️ SonarQube Quality Gate *failed* for *${env.JOB_NAME}* #${env.BUILD_NUMBER}: ${qg.status}")
                         } else {
@@ -64,7 +77,10 @@ pipeline {
             steps {
                 script {
                     echo '<--------------- Jar Publish Started --------------->'
-                    sh 'ls -lh target/*.jar || echo "❌ No JAR found!"'
+                    sh '''
+                        echo -e "\\033[1;34m📦 Listing generated JARs...\\033[0m"
+                        ls -lh target/*.jar || echo -e "\\033[1;31m❌ No JAR found!\\033[0m"
+                    '''
 
                     def server = Artifactory.newServer(
                         url: "${env.registry}/artifactory",
@@ -104,10 +120,14 @@ pipeline {
                     def tag = "${env.BUILD_NUMBER ?: '0'}-manual"
                     def imageFullPath = "trialvl2jw6.jfrog.io/devops-docker-local/ttrend:${tag}"
 
-                    app = docker.build("${imageFullPath}", "--memory=512m .")
+                    sh """
+                        echo -e "\\033[1;34m🐳 Building Docker image...\\033[0m"
+                        docker build -t ${imageFullPath} --memory=512m .
+                        echo -e "\\033[1;32m🟢 Docker build complete: ${imageFullPath}\\033[0m"
+                    """
+
                     env.DOCKER_IMAGE_TAG = tag
                     env.DOCKER_IMAGE_NAME = imageFullPath
-                    echo "<--------------- Docker Build Ended --------------->"
                     slackSend(channel: 'jenkins-alerts', color: '#36a64f',
                         message: "🐳 Docker image *${env.DOCKER_IMAGE_NAME}* built for *${env.JOB_NAME}*")
                 }
@@ -122,6 +142,7 @@ pipeline {
 
                     def trivyExitCode = sh(
                         script: """
+                            echo -e "\\033[1;34m🔍 Scanning Docker image with Trivy...\\033[0m"
                             trivy image \
                               --severity HIGH,CRITICAL \
                               --exit-code 1 \
@@ -133,11 +154,11 @@ pipeline {
                     )
 
                     if (trivyExitCode == 1) {
-                        echo "⚠️ Trivy found HIGH or CRITICAL vulnerabilities (ignored for now)."
+                        echo "⚠️ Trivy found HIGH or CRITICAL vulnerabilities"
                         slackSend(channel: 'jenkins-alerts', color: 'warning',
                             message: "⚠️ Trivy found HIGH/CRITICAL vulnerabilities in *${env.DOCKER_IMAGE_NAME}*")
                     } else if (trivyExitCode == 2) {
-                        error "❌ Trivy failed to execute properly (exit code 2)."
+                        error "❌ Trivy failed to execute (exit code 2)"
                     } else {
                         echo "✅ No critical vulnerabilities found by Trivy."
                         slackSend(channel: 'jenkins-alerts', color: 'good',
@@ -175,10 +196,10 @@ pipeline {
                     def containerName = "ttrend-${env.BRANCH_NAME}"
 
                     sh """
-                        echo "🧹 Cleaning up old container (if exists)..."
+                        echo -e "\\033[1;34m🧹 Cleaning up old container...\\033[0m"
                         docker rm -f ${containerName} || true
 
-                        echo "🚀 Running container ${containerName} on port ${port}..."
+                        echo -e "\\033[1;34m🚀 Running new container ${containerName} on port ${port}...\\033[0m"
                         docker run -d \
                             -p ${port}:8080 \
                             -e SPRING_PROFILES_ACTIVE=${env.BRANCH_NAME} \
@@ -195,7 +216,10 @@ pipeline {
         stage("Cleanup") {
             steps {
                 cleanWs()
-                sh 'sync; echo 3 > /proc/sys/vm/drop_caches || true'
+                sh '''
+                    echo -e "\\033[1;34m🧹 Flushing memory cache...\\033[0m"
+                    sync; echo 3 > /proc/sys/vm/drop_caches || true
+                '''
                 slackSend(channel: 'jenkins-alerts', color: '#cccccc',
                     message: "🧹 Workspace cleaned after build *${env.JOB_NAME}* #${env.BUILD_NUMBER}")
             }
