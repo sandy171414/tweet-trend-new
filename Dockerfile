@@ -12,10 +12,10 @@ FROM eclipse-temurin:21-jre
 WORKDIR /app
 COPY --from=builder /app/target/*.jar app.jar
 
-# Optional: allow dynamic profile + JVM opts
 ENV JAVA_OPTS=""
 ENV SPRING_PROFILES_ACTIVE=main
 
 EXPOSE 8080
 
+# ✅ Correct shell-form ENTRYPOINT using double quotes
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Dspring.profiles.active=$SPRING_PROFILES_ACTIVE -jar app.jar"]
