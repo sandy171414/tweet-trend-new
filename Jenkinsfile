@@ -108,7 +108,7 @@ pipeline {
                     env.DOCKER_IMAGE_TAG = tag
                     env.DOCKER_IMAGE_NAME = imageFullPath
                     echo "<--------------- Docker Build Ended --------------->"
-                    slackSend(channel: 'jenkins-alerts', color: '#36a64f',
+                    slackSend(channel: 'jenkins-alerts', color: '#38a64f',
                         message: "🐳 Docker image *${env.DOCKER_IMAGE_NAME}* built for *${env.JOB_NAME}*")
                 }
             }
