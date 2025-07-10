@@ -19,7 +19,7 @@ public class RepositoryDetailsController {
     public String getRepos() throws IOException {
         GitHub github = new GitHubBuilder().withPassword("valaxytech@gmail.com", "XXXXXXXX").build();
         GHRepositorySearchBuilder builder = github.searchRepositories();
-        return "this is stage branch booom";
+        return "this is stage branch booom Wellcome to the version v1";
     }
 
     @GetMapping("/trends")
